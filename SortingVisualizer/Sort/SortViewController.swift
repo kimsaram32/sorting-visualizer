@@ -76,7 +76,7 @@ class SortViewController: UIViewController {
         }
     }
     
-    // MARK: - UI
+    // MARK: - UI - Elements
     
     private lazy var actionLabel: UILabel = .make {
         $0.text = " "
@@ -122,6 +122,17 @@ class SortViewController: UIViewController {
         })
     }
     
+    typealias ComplexityCell = ComplexityTableViewCell
+    
+    private lazy var complexityTableView: UITableView = .make {
+        $0.dataSource = self
+        $0.register(ComplexityCell.self, forCellReuseIdentifier: ComplexityCell.reuseIdentifier)
+        $0.bounces = false
+        $0.allowsSelection = false
+    }
+    
+    // MARK: - UI - Layout
+    
     private lazy var controlsStackView: UIStackView = .make {
         $0.addArrangedSubview(self.previousButton)
         $0.addArrangedSubview(self.togglePlayButton)
@@ -129,13 +140,22 @@ class SortViewController: UIViewController {
         $0.distribution = .equalSpacing
     }
     
-    typealias ComplexityCell = ComplexityTableViewCell
-    
-    private lazy var complexityTableView: UITableView = .make {
-        $0.dataSource = self
-        $0.register(ComplexityCell.self, forCellReuseIdentifier: ComplexityCell.reuseIdentifier)
-        $0.bounces = false
+    private lazy var playgroundStackView: UIStackView = .make {
+        $0.addArrangedSubview(self.actionLabel)
+        $0.addArrangedSubview(self.itemsView)
+        $0.addArrangedSubview(self.controlsStackView)
+        $0.axis = .vertical
+        $0.spacing = 20
     }
+    
+    private lazy var layoutStackView: UIStackView = .make {
+        $0.addArrangedSubview(self.playgroundStackView)
+        $0.addArrangedSubview(self.complexityTableView)
+        $0.distribution = .fillEqually
+        $0.spacing = 30
+    }
+    
+    // MARK: - UI - methods
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -144,6 +164,14 @@ class SortViewController: UIViewController {
         
         view.backgroundColor = .systemBackground
         configureSubviews()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateLayoutStackAxis),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+        updateLayoutStackAxis()
+        
         actions = sortAlgorithm.builder.build(for: targetArray)
         actions.insert(EmptyAction(), at: 0)
         actions.append(EmptyAction())
@@ -152,43 +180,23 @@ class SortViewController: UIViewController {
     }
     
     func configureSubviews() {
-        let layout = UILayoutGuide()
-        view.addLayoutGuide(layout)
+        view.addSubview(layoutStackView)
         NSLayoutConstraint.activate([
-            layout.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            layout.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            layout.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
-            layout.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10),
+            layoutStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            layoutStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            layoutStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
+            layoutStackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10),
         ])
+    }
+    
+    @objc func updateLayoutStackAxis() {
+        let orientation = UIDevice.current.orientation
         
-        view.addSubview(actionLabel)
-        NSLayoutConstraint.activate([
-            actionLabel.topAnchor.constraint(equalTo: layout.topAnchor),
-            actionLabel.leadingAnchor.constraint(equalTo: layout.leadingAnchor),
-        ])
-        
-        view.addSubview(itemsView)
-        NSLayoutConstraint.activate([
-            itemsView.leadingAnchor.constraint(equalTo: layout.leadingAnchor),
-            itemsView.trailingAnchor.constraint(equalTo: layout.trailingAnchor),
-            itemsView.topAnchor.constraint(equalTo: actionLabel.bottomAnchor, constant: 20),
-            itemsView.bottomAnchor.constraint(equalTo: view.centerYAnchor),
-        ])
-        
-        view.addSubview(controlsStackView)
-        NSLayoutConstraint.activate([
-            controlsStackView.leadingAnchor.constraint(equalTo: layout.leadingAnchor),
-            controlsStackView.trailingAnchor.constraint(equalTo: layout.trailingAnchor),
-            controlsStackView.topAnchor.constraint(equalTo: itemsView.bottomAnchor, constant: 20),
-        ])
-        
-        view.addSubview(complexityTableView)
-        NSLayoutConstraint.activate([
-            complexityTableView.leadingAnchor.constraint(equalTo: layout.leadingAnchor),
-            complexityTableView.trailingAnchor.constraint(equalTo: layout.trailingAnchor),
-            complexityTableView.topAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 30),
-            complexityTableView.bottomAnchor.constraint(equalTo: layout.bottomAnchor),
-        ])
+        if orientation.isLandscape {
+            layoutStackView.axis = .horizontal
+        } else if orientation.isPortrait {
+            layoutStackView.axis = .vertical
+        }
     }
     
     func updateActionLabel() {
@@ -208,6 +216,10 @@ class SortViewController: UIViewController {
 }
 
 extension SortViewController: UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        "Complexity"
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         sortAlgorithm.complexities.count

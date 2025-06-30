@@ -1,9 +1,10 @@
 import UIKit
+import SwiftMath
 
 class ComplexityTableViewCell: UITableViewCell {
     
     lazy var nameLabel: UILabel = .make()
-    lazy var valueLabel: UILabel = .make()
+    lazy var valueLabel: MTMathUILabel = .make()
     
     static let reuseIdentifier = String(describing: ComplexityTableViewCell.self)
     
@@ -32,12 +33,11 @@ class ComplexityTableViewCell: UITableViewCell {
         ])
     }
     
-    // - MARK: Cell configuration
+    // MARK: - Cell configuration
     
     func configure(name: String, value: String) {
         nameLabel.text = name
-        valueLabel.text = value
+        valueLabel.latex = value
     }
     
 }
-
