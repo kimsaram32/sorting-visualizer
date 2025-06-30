@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Bubble Sort",
+        "complexity": {
+            "Best": "O(n^2)",
+            "Average": "O(n^2)",
+            "Worst": "O(n^2)",
+        },
+        "builder": "BubbleSortBuilder",
+        "pesudocode": "hei"
+    },
+    {
+        "name": "Insertion Sort",
+        "complexity": {
+            "Best": "O(n)",
+            "Average": "O(n^2)",
+            "Worst": "O(n^2)",
+        },
+        "builder": "InsertionSortBuilder",
+        "pesudocode": "die"
+    },
+    {
+        "name": "Selection Sort",
+        "complexity": {
+            "Best": "O(n^2)",
+            "Average": "O(n^2)",
+            "Worst": "O(n^2)",
+        },
+        "builder": "SelectionSortBuilder",
+        "pesudocode": "die"
+    }
+]
