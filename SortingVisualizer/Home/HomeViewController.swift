@@ -36,9 +36,9 @@ extension HomeViewController {
             layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(Cell.height)),
             subitems: [item, item]
         )
-        group.interItemSpacing = NSCollectionLayoutSpacing.flexible(4)
+        group.interItemSpacing = NSCollectionLayoutSpacing.flexible(12)
         let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 4
+        section.interGroupSpacing = 12
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8)
         return UICollectionViewCompositionalLayout(section: section)
     }
@@ -55,6 +55,7 @@ extension HomeViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.identifier, for: indexPath) as! Cell
         let sortAlgorithm = SortAlgorithm.items[indexPath.row]
         cell.title = sortAlgorithm.name
+        cell.icon = sortAlgorithm.icon
         return cell
     }
     

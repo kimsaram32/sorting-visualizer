@@ -3,10 +3,7 @@ import UIKit
 class SortViewController: UIViewController {
     
     let sortAlgorithm: SortAlgorithm
-    var targetArray = Array(1...10).shuffled()
-    
-    private var actions = [SortAction]()
-    
+
     init(sortAlgorithm: SortAlgorithm) {
         self.sortAlgorithm = sortAlgorithm
         super.init(nibName: nil, bundle: nil)
@@ -18,29 +15,28 @@ class SortViewController: UIViewController {
     
     // MARK: - state
     
-    private var currentActionIndex = 0 {
-        didSet {
-            guard oldValue != currentActionIndex else { return }
-            
-            let currentAction = actions[currentActionIndex]
-            let oldAction: SortAction? = oldValue > -1 ? actions[oldValue] : nil
-            
-            if let oldAction {
-                itemsView.dehighlight(for: oldAction)
+    lazy var target = {
+        let target = SortTarget(items: Array(0...9).shuffled())
+        
+        target.recordDiffHandler = { diff in
+            for index in diff.dehighlighted {
+                self.itemsView.dehighlight(index)
             }
             
-            if let oldAction, currentActionIndex < oldValue {
-                itemsView.revert(oldAction)
-            } else {
-                itemsView.perform(currentAction)
+            for index in diff.highlighted {
+                self.itemsView.highlight(index, color: target.currentRecord.color)
             }
             
-            itemsView.highlight(for: currentAction)
+            self.itemsView.change(diff.changed.map { ($0, target.items[$0]) }, animated: true)
             
-            updateActionLabel()
-            updateNavButtons()
+            self.updateNavButtons()
+            self.updateActionLabel()
         }
-    }
+        
+        target.setRecords(with: sortAlgorithm.runner)
+        
+        return target
+    }()
     
     private var isPlaying = false {
         didSet {
@@ -54,21 +50,13 @@ class SortViewController: UIViewController {
         }
     }
     
-    private var nextActionAvailable: Bool {
-        currentActionIndex + 1 < actions.count
-    }
-    
-    private var previousActionAvailable: Bool {
-        currentActionIndex > 0
-    }
-    
     func startPlayTask() {
         Task {
-            guard nextActionAvailable else {
+            guard target.nextAvailable else {
                 isPlaying = false
                 return
             }
-            currentActionIndex += 1
+            target.gotoNext()
             try? await Task.sleep(for: .milliseconds(100))
             if isPlaying {
                 startPlayTask()
@@ -84,20 +72,18 @@ class SortViewController: UIViewController {
     }
     
     private lazy var itemsView: ItemsView = .make(nil) {
-        ItemsView(items: self.targetArray)
+        ItemsView(items: self.target.items)
     }
     
     private lazy var previousButton: UIButton = .make(nil) {
         UIButton(configuration: .filled(), primaryAction: UIAction(title: "Previous") { [unowned self] _ in
-            guard previousActionAvailable else { return }
-            currentActionIndex -= 1
+            target.gotoPrevious()
         })
     }
     
     private lazy var nextButton: UIButton = .make(nil) {
         UIButton(configuration: .filled(), primaryAction: UIAction(title: "Next") { [unowned self] _ in
-            guard nextActionAvailable else { return }
-            currentActionIndex += 1
+            target.gotoNext()
         })
     }
     
@@ -171,12 +157,6 @@ class SortViewController: UIViewController {
             object: nil
         )
         updateLayoutStackAxis()
-        
-        actions = sortAlgorithm.builder.build(for: targetArray)
-        actions.insert(EmptyAction(), at: 0)
-        actions.append(EmptyAction())
-        
-        updateNavButtons()
     }
     
     func configureSubviews() {
@@ -200,17 +180,17 @@ class SortViewController: UIViewController {
     }
     
     func updateActionLabel() {
-        let action = actions[currentActionIndex]
-        actionLabel.textColor = action.color
-        actionLabel.text = "\(action.label)"
-        if action.affected.count > 0 {
-            actionLabel.text! += "(\(action.affected.map({ String($0) }).joined(separator: ", ")))"
+        let record = target.currentRecord
+        actionLabel.textColor = record.color
+        actionLabel.text = "\(record.label)"
+        if record.affected.count > 0 {
+            actionLabel.text! += "(\(record.affected.map({ String($0) }).joined(separator: ", ")))"
         }
     }
     
     func updateNavButtons() {
-        nextButton.isEnabled = !isPlaying && nextActionAvailable
-        previousButton.isEnabled = !isPlaying && previousActionAvailable
+        nextButton.isEnabled = !isPlaying && target.nextAvailable
+        previousButton.isEnabled = !isPlaying && target.previousAvailable
     }
 
 }
@@ -228,7 +208,8 @@ extension SortViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let complexity = sortAlgorithm.complexities[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: ComplexityCell.reuseIdentifier) as! ComplexityCell
-        cell.configure(name: complexity.name, value: complexity.expression)
+        cell.name = complexity.name
+        cell.value = complexity.expression
         return cell
     }
     

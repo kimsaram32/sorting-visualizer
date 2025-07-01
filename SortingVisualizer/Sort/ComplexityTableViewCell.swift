@@ -3,10 +3,28 @@ import SwiftMath
 
 class ComplexityTableViewCell: UITableViewCell {
     
-    lazy var nameLabel: UILabel = .make()
-    lazy var valueLabel: MTMathUILabel = .make()
+    // MARK: - Configuration
     
     static let reuseIdentifier = String(describing: ComplexityTableViewCell.self)
+    
+    var name: String = "" {
+        didSet {
+            nameLabel.text = name
+        }
+    }
+    
+    var value: String = "" {
+        didSet {
+            valueLabel.latex = value
+        }
+    }
+    
+    // MARK: - Layout
+    
+    private lazy var nameLabel: UILabel = .make()
+    private lazy var valueLabel: MTMathUILabel = .make {
+        $0.textColor = .label
+    }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -33,11 +51,5 @@ class ComplexityTableViewCell: UITableViewCell {
         ])
     }
     
-    // MARK: - Cell configuration
-    
-    func configure(name: String, value: String) {
-        nameLabel.text = name
-        valueLabel.latex = value
-    }
     
 }

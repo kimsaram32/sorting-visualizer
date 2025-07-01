@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 struct SortAlgorithm: Decodable {
     
@@ -16,25 +17,29 @@ struct SortAlgorithm: Decodable {
     
     let name: String
     let complexities: [Complexity]
-    let pesudocode: String
-    let builder: SortBuilder
+    let runner: SortRunner
+    let icon: UIImage?
 
     enum CodingKeys: CodingKey {
         case name
         case complexity
-        case pesudocode
-        case builder
+        case runner
+        case icon
     }
     
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        
         self.name = try container.decode(String.self, forKey: .name)
+        
         let complexityDict = try container.decode([String: String].self, forKey: .complexity)
         self.complexities = complexityDict.map { Complexity(name: $0, expression: $1) }
-        self.pesudocode = try container.decode(String.self, forKey: .pesudocode)
 
-        let builderString = try container.decode(String.self, forKey: .builder)
-        self.builder = SortBuilderMap.builder(ofName: builderString)
+        let runnerString = try container.decode(String.self, forKey: .runner)
+        self.runner = SortRunnerMap.runner(ofName: runnerString)
+        
+        let imageSystemName = try container.decode(String.self, forKey: .icon)
+        self.icon = UIImage(systemName: imageSystemName)
     }
     
 }
