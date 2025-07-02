@@ -2,38 +2,36 @@ import UIKit
 
 class ItemsView: UIView {
     
-    private let initialItems: [Int]
-
     private lazy var itemViews = [BarView]()
+    
+    private var stackView: UIStackView!
 
-    private lazy var stackView: UIStackView = .make {
-        $0.axis = .horizontal
-        $0.distribution = .fillEqually
-        $0.alignment = .bottom
+    private func createStackView() -> UIStackView {
+        let stackView: UIStackView = .make()
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.alignment = .bottom
+        return stackView
     }
     
-    init(items: [Int]) {
-        self.initialItems = items
-        super.init(frame: .zero)
-        configureSubviews()
+    func setItems(items: [Int]) {
+        stackView?.removeFromSuperview()
+        stackView = createStackView()
+        configureSubviews(with: items)
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError()
-    }
-    
-    private func configureSubviews() {
+
+    private func configureSubviews(with items: [Int]) {
         addSubview(stackView)
         stackView.pin(to: self)
         
-        let itemRatios = (1...initialItems.count).map { CGFloat($0) / CGFloat(initialItems.count) }
+        let itemRatios = (1...items.count).map { CGFloat($0) / CGFloat(items.count) }
         itemViews = itemRatios.map { ratio in
             BarView.make(nil) {
                 BarView(ratio: ratio)
             }
         }
         
-        for item in initialItems {
+        for item in items {
             stackView.addArrangedSubview(itemViews[item])
         }
         

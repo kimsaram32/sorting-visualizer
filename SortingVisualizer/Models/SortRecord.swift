@@ -1,22 +1,5 @@
 import UIKit
 
-protocol SortRecord: LabelRepresentable, ColorRepresentable {
-    
-    var affected: [Int] { get }
-    
-    func apply(to array: inout [Int])
-    
-    func cancel(to array: inout [Int])
-    
-}
-
-extension SortRecord {
-    
-    func apply(to array: inout [Int]) {}
-    func cancel(to array: inout [Int]) {}
-    
-}
-
 struct AffectedElement {
     
     let index: Int
@@ -25,7 +8,7 @@ struct AffectedElement {
     
 }
 
-struct NewSortRecord: LabelRepresentable, ColorRepresentable {
+struct SortRecord: LabelRepresentable, ColorRepresentable {
     
     let affectedElements: [AffectedElement]
     let label: String
@@ -41,8 +24,8 @@ struct NewSortRecord: LabelRepresentable, ColorRepresentable {
         affectedElements.map { $0.index }
     }
     
-    static func empty() -> NewSortRecord {
-        NewSortRecord(affected: [], label: " ", color: .black)
+    static func empty() -> SortRecord {
+        SortRecord(affected: [], label: " ", color: .black)
     }
     
 }

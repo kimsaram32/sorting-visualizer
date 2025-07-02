@@ -5,42 +5,20 @@ class SortTarget {
     var recordDiffHandler: RecordDiffHandler?
     
     private(set) var items: [Int]
-    private var records = [NewSortRecord]()
+    private var records = [SortRecord]()
     
-    init(items: [Int]) {
-        self.items = items
+    init(size: Int) {
+        self.items = Array(0..<size)
     }
     
-    private var currentRecordIndex = 0 {
-        didSet {
-            guard oldValue != currentRecordIndex else { return }
-            
-            let oldRecord: NewSortRecord? = oldValue > -1 ? records[oldValue] : nil
-            
-            let changed: [Int]
-            
-            if let oldRecord, currentRecordIndex < oldValue {
-                for affected in oldRecord.affectedElements {
-                    items[affected.index] = affected.oldValue
-                }
-                changed = oldRecord.affectedIndices
-            } else {
-                for affected in currentRecord.affectedElements {
-                    items[affected.index] = affected.newValue
-                }
-                changed = currentRecord.affectedIndices
-            }
-            
-            let dehighlighted = oldRecord?.affectedIndices ?? []
-            let highlighted = currentRecord.affectedIndices
-            
-            let diff = RecordDiff(highlighted: highlighted, dehighlighted: dehighlighted, changed: changed)
-            recordDiffHandler?(diff)
-        }
-    }
+    private var currentRecordIndex = 0
     
-    var currentRecord: NewSortRecord {
+    var currentRecord: SortRecord {
         records[currentRecordIndex]
+    }
+    
+    private var previousRecord: SortRecord? {
+        currentRecordIndex > 0 ? records[currentRecordIndex - 1] : nil
     }
     
     func setRecords(with runner: SortRunner) {
@@ -59,7 +37,21 @@ class SortTarget {
     
     func gotoPrevious() {
         guard previousAvailable else { return }
+        
         currentRecordIndex -= 1
+        
+        if let previousRecord {
+            for affected in previousRecord.affectedElements {
+                items[affected.index] = affected.oldValue
+            }
+        }
+        
+        let diff = RecordDiff(
+            highlighted: currentRecord.affectedIndices,
+            dehighlighted: previousRecord?.affectedIndices ?? [],
+            changed: previousRecord?.affectedIndices ?? []
+        )
+        recordDiffHandler?(diff)
     }
     
     var nextAvailable: Bool {
@@ -68,7 +60,19 @@ class SortTarget {
     
     func gotoNext() {
         guard nextAvailable else { return }
+        
         currentRecordIndex += 1
+        
+        for affected in currentRecord.affectedElements {
+            items[affected.index] = affected.newValue
+        }
+        
+        let diff = RecordDiff(
+            highlighted: currentRecord.affectedIndices,
+            dehighlighted: previousRecord?.affectedIndices ?? [],
+            changed: currentRecord.affectedIndices
+        )
+        recordDiffHandler?(diff)
     }
     
 }

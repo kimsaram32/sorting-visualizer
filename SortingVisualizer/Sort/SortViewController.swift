@@ -2,6 +2,14 @@ import UIKit
 
 class SortViewController: UIViewController {
     
+    struct PlaybackSpeed {
+        static let slow = Duration.milliseconds(200)
+        static let normal = Duration.milliseconds(100)
+        static let fast = Duration.milliseconds(50)
+    }
+    
+    let sizes = [10, 20, 50, 100]
+    
     let sortAlgorithm: SortAlgorithm
 
     init(sortAlgorithm: SortAlgorithm) {
@@ -15,8 +23,10 @@ class SortViewController: UIViewController {
     
     // MARK: - state
     
-    lazy var target = {
-        let target = SortTarget(items: Array(0...19).shuffled())
+    lazy var target = createTarget(withSize: sizes.first!)
+    
+    func createTarget(withSize size: Int) -> SortTarget {
+        let target = SortTarget(size: size)
         
         target.recordDiffHandler = { diff in
             for index in diff.dehighlighted {
@@ -36,7 +46,7 @@ class SortViewController: UIViewController {
         target.setRecords(with: sortAlgorithm.runner)
         
         return target
-    }()
+    }
     
     private var isPlaying = false {
         didSet {
@@ -50,14 +60,17 @@ class SortViewController: UIViewController {
         }
     }
     
+    private var playbackSpeed = PlaybackSpeed.normal
+    
     func startPlayTask() {
         Task {
             guard target.nextAvailable else {
                 isPlaying = false
+                target.setRecords(with: sortAlgorithm.runner) // todo better than this...
                 return
             }
             target.gotoNext()
-            try? await Task.sleep(for: .milliseconds(100))
+            try? await Task.sleep(for: playbackSpeed)
             if isPlaying {
                 startPlayTask()
             }
@@ -71,8 +84,8 @@ class SortViewController: UIViewController {
         $0.font = .preferredFont(forTextStyle: .title2)
     }
     
-    private lazy var itemsView: ItemsView = .make(nil) {
-        ItemsView(items: self.target.items)
+    private lazy var itemsView: ItemsView = .make {
+        $0.setItems(items: self.target.items)
     }
     
     private lazy var previousButton: UIButton = .make(nil) {
@@ -149,7 +162,20 @@ class SortViewController: UIViewController {
         title = sortAlgorithm.name
         
         view.backgroundColor = .systemBackground
+        
         configureSubviews()
+        
+        navigationItem.rightBarButtonItems = [
+            UIBarButtonItem(
+                image: UIImage(systemName: "chevron.forward.2"),
+                menu: createSpeedMenu()
+            ),
+            UIBarButtonItem(
+                image: UIImage(systemName: "chart.bar.fill"),
+                menu: createSizeMenu()
+            )
+        ]
+        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateLayoutStackAxis),
@@ -157,6 +183,50 @@ class SortViewController: UIViewController {
             object: nil
         )
         updateLayoutStackAxis()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        target.setRecords(with: ShuffleRunner())
+        isPlaying = true
+        startPlayTask()
+    }
+    
+    func createSpeedMenu() -> UIMenu {
+        let slowSpeedAction = UIAction(title: "Slow") { _ in
+            self.playbackSpeed = PlaybackSpeed.slow
+        }
+        
+        let normalSpeedAction = UIAction(title: "Normal") { _ in
+            self.playbackSpeed = PlaybackSpeed.normal
+        }
+        normalSpeedAction.state = .on
+        
+        let fastSpeedAction = UIAction(title: "Fast") { _ in
+            self.playbackSpeed = PlaybackSpeed.fast
+        }
+        
+        return UIMenu(
+            title: "Speed",
+            options: .singleSelection,
+            children: [slowSpeedAction, normalSpeedAction, fastSpeedAction]
+        )
+    }
+    
+    func createSizeMenu() -> UIMenu {
+        let sizeActions = sizes.map { size in
+            UIAction(title: "\(size) Items") { [unowned self] _ in
+                target = createTarget(withSize: size)
+                itemsView.setItems(items: target.items)
+                
+                target.setRecords(with: ShuffleRunner())
+                if !isPlaying {
+                    isPlaying = true
+                    startPlayTask()
+                }
+            }
+        }
+        sizeActions.first?.state = .on
+        return UIMenu(title: "Size", options: .singleSelection, children: sizeActions)
     }
     
     func configureSubviews() {

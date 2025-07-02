@@ -1,7 +1,7 @@
 class RecordedList {
     
     private var items: [Int]
-    private(set) var records = [NewSortRecord]()
+    private(set) var records = [SortRecord]()
     
     init(items: [Int]) {
         self.items = items
@@ -12,7 +12,7 @@ class RecordedList {
     }
     
     func swapAt(_ i: Int, _ j: Int) {
-        records.append(NewSortRecord(
+        records.append(SortRecord(
             affected: [
                 changedElement(at: i, newValue: items[j]),
                 changedElement(at: j, newValue: items[i])
@@ -24,7 +24,7 @@ class RecordedList {
     }
     
     func setElement(at i: Int, value: Int) {
-        records.append(NewSortRecord(
+        records.append(SortRecord(
             affected: [changedElement(at: i, newValue: value)],
             label: "Overwrite",
             color: .systemGreen
@@ -33,7 +33,7 @@ class RecordedList {
     }
     
     func inspect(_ i: Int) -> Int {
-        records.append(NewSortRecord(
+        records.append(SortRecord(
             affected: [unchangedElement(at: i)],
             label: "Inspect",
             color: .systemOrange
@@ -46,7 +46,7 @@ class RecordedList {
     }
     
     func compare(_ i: Int, _ j: Int) -> Int {
-        records.append(NewSortRecord(
+        records.append(SortRecord(
             affected: [
                 unchangedElement(at: i),
                 unchangedElement(at: j)
