@@ -5,7 +5,7 @@ class SortTarget {
     var recordDiffHandler: RecordDiffHandler?
     
     private(set) var items: [Int]
-    private var records = [SortRecord]()
+    private var records = [NewSortRecord]()
     
     init(items: [Int]) {
         self.items = items
@@ -15,27 +15,31 @@ class SortTarget {
         didSet {
             guard oldValue != currentRecordIndex else { return }
             
-            let oldRecord: SortRecord? = oldValue > -1 ? records[oldValue] : nil
+            let oldRecord: NewSortRecord? = oldValue > -1 ? records[oldValue] : nil
             
             let changed: [Int]
             
             if let oldRecord, currentRecordIndex < oldValue {
-                oldRecord.cancel(to: &items)
-                changed = oldRecord.affected
+                for affected in oldRecord.affectedElements {
+                    items[affected.index] = affected.oldValue
+                }
+                changed = oldRecord.affectedIndices
             } else {
-                currentRecord.apply(to: &items)
-                changed = currentRecord.affected
+                for affected in currentRecord.affectedElements {
+                    items[affected.index] = affected.newValue
+                }
+                changed = currentRecord.affectedIndices
             }
             
-            let dehighlighted = oldRecord?.affected ?? []
-            let highlighted = currentRecord.affected
+            let dehighlighted = oldRecord?.affectedIndices ?? []
+            let highlighted = currentRecord.affectedIndices
             
             let diff = RecordDiff(highlighted: highlighted, dehighlighted: dehighlighted, changed: changed)
             recordDiffHandler?(diff)
         }
     }
     
-    var currentRecord: SortRecord {
+    var currentRecord: NewSortRecord {
         records[currentRecordIndex]
     }
     
@@ -43,9 +47,9 @@ class SortTarget {
         let recordedList = RecordedList(items: items)
         runner.run(with: recordedList)
         
-        records = [EmptyRecord()]
+        records = [.empty()]
         records.append(contentsOf: recordedList.records)
-        records.append(EmptyRecord())
+        records.append(.empty())
         currentRecordIndex = 0
     }
     

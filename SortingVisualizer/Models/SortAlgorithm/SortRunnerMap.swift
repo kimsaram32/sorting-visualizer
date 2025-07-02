@@ -8,6 +8,10 @@ struct SortRunnerMap {
             InsertionSortRunner()
         case "SelectionSortRunner":
             SelectionSortRunner()
+        case "QuickSortRunner":
+            QuickSortRunner()
+        case "MergeSortRunner":
+            MergeSortRunner()
         default:
             fatalError("\(String(describing: self)): Unknown sort builder name: \(name)")
         }

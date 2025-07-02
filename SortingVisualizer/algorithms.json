@@ -4,7 +4,7 @@
         "complexity": {
             "Best": "O(n^2)",
             "Average": "O(n^2)",
-            "Worst": "O(n^2)",
+            "Worst": "O(n^2)"
         },
         "runner": "BubbleSortRunner",
         "icon": "bubbles.and.sparkles.fill"
@@ -14,7 +14,7 @@
         "complexity": {
             "Best": "O(n)",
             "Average": "O(n^2)",
-            "Worst": "O(n^2)",
+            "Worst": "O(n^2)"
         },
         "runner": "InsertionSortRunner",
         "icon": "arrow.uturn.down"
@@ -24,9 +24,29 @@
         "complexity": {
             "Best": "O(n^2)",
             "Average": "O(n^2)",
-            "Worst": "O(n^2)",
+            "Worst": "O(n^2)"
         },
         "runner": "SelectionSortRunner",
         "icon": "rectangle.and.hand.point.up.left.fill"
+    },
+    {
+        "name": "Quick Sort",
+        "complexity": {
+            "Best": "O(n \\log{n})",
+            "Average": "O(n \\log{n})",
+            "Worst": "O(n^2)"
+        },
+        "runner": "QuickSortRunner",
+        "icon": "bolt.fill"
+    },
+    {
+        "name": "Merge Sort",
+        "complexity": {
+            "Best": "O(n \\log{n})",
+            "Average": "O(n \\log{n})",
+            "Worst": "O(n \\log{n})"
+        },
+        "runner": "MergeSortRunner",
+        "icon": "rectangle.split.2x1.fill"
     }
 ]

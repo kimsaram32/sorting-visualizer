@@ -16,7 +16,7 @@ class SortViewController: UIViewController {
     // MARK: - state
     
     lazy var target = {
-        let target = SortTarget(items: Array(0...9).shuffled())
+        let target = SortTarget(items: Array(0...19).shuffled())
         
         target.recordDiffHandler = { diff in
             for index in diff.dehighlighted {
@@ -183,8 +183,8 @@ class SortViewController: UIViewController {
         let record = target.currentRecord
         actionLabel.textColor = record.color
         actionLabel.text = "\(record.label)"
-        if record.affected.count > 0 {
-            actionLabel.text! += "(\(record.affected.map({ String($0) }).joined(separator: ", ")))"
+        if record.affectedIndices.count > 0 {
+            actionLabel.text! += "(\(record.affectedIndices.map({ String($0) }).joined(separator: ", ")))"
         }
     }
     
