@@ -40,7 +40,7 @@ class SortViewController: UIViewController {
             
             self.itemsView.change(diff.changed.map { ($0, target.items[$0]) }, animated: true)
             
-            self.updateNavButtons()
+            self.updateButtons()
             self.updateActionLabel()
         }
         
@@ -49,26 +49,23 @@ class SortViewController: UIViewController {
         return target
     }
     
-    private var size = 10
-    private var order: SortOrder = .ascending
-    
     func updateTargetWithNewSettings() {
         target = createTarget(withSize: size, order: order)
         itemsView.setItems(items: target.items)
-        
-        target.setRecords(with: ShuffleRunner())
-        if !isPlaying {
-            isPlaying = true
-            startPlayTask()
-        }
+        playShuffle()
     }
+    
+    private var size = 10
+    private var order: SortOrder = .ascending
+    
+    private var isShuffling = false
     
     private var isPlaying = false {
         didSet {
             guard oldValue != isPlaying else { return }
             
             togglePlayButton.setNeedsUpdateConfiguration()
-            updateNavButtons()
+            updateButtons()
             if isPlaying {
                 startPlayTask()
             }
@@ -81,7 +78,10 @@ class SortViewController: UIViewController {
         Task {
             guard target.nextAvailable else {
                 isPlaying = false
-                target.setRecords(with: sortAlgorithm.runner) // todo better than this...
+                if isShuffling { // todo better than this...
+                    isShuffling = false
+                    target.setRecords(with: sortAlgorithm.runner)
+                }
                 return
             }
             target.gotoNext()
@@ -90,6 +90,12 @@ class SortViewController: UIViewController {
                 startPlayTask()
             }
         }
+    }
+    
+    func playShuffle() {
+        target.setRecords(with: ShuffleRunner())
+        isShuffling = true
+        isPlaying = true
     }
     
     // MARK: - UI - Elements
@@ -136,6 +142,12 @@ class SortViewController: UIViewController {
         })
     }
     
+    private lazy var shuffleButton: UIButton = .make(nil) {
+        UIButton(configuration: .tinted(), primaryAction: UIAction(title: "Shuffle") { [unowned self] _ in
+            playShuffle()
+        })
+    }
+    
     typealias ComplexityCell = ComplexityTableViewCell
     
     private lazy var complexityTableView: UITableView = .make {
@@ -151,6 +163,7 @@ class SortViewController: UIViewController {
         $0.addArrangedSubview(self.previousButton)
         $0.addArrangedSubview(self.togglePlayButton)
         $0.addArrangedSubview(self.nextButton)
+        $0.addArrangedSubview(self.shuffleButton)
         $0.distribution = .equalSpacing
     }
     
@@ -169,48 +182,40 @@ class SortViewController: UIViewController {
         $0.spacing = 30
     }
     
-    // MARK: - UI - methods
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    // MARK: - UI - Bar button items
+    
+    lazy var orderBarButtonItem: UIBarButtonItem = {
+        let orderActions = orders.map { order in
+            UIAction(title: order.label) { [unowned self] _ in
+                self.order = order
+                self.updateTargetWithNewSettings()
+            }
+        }
+        orderActions.first?.state = .on
         
-        title = sortAlgorithm.name
-        
-        view.backgroundColor = .systemBackground
-        
-        configureSubviews()
-        
-        navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(
-                image: UIImage(systemName: "chevron.forward.2"),
-                menu: createSpeedMenu()
-            ),
-            UIBarButtonItem(
-                image: UIImage(systemName: "chart.bar.fill"),
-                menu: createSizeMenu()
-            ),
-            UIBarButtonItem(
-                image: UIImage(systemName: "arrow.up.arrow.down"),
-                menu: createOrderMenu()
-            ),
-        ]
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateLayoutStackAxis),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
+        return UIBarButtonItem(
+            image: UIImage(systemName: "arrow.up.arrow.down"),
+            menu: UIMenu(title: "Order", options: .singleSelection, children: orderActions)
         )
-        updateLayoutStackAxis()
-    }
+    }()
     
-    override func viewDidAppear(_ animated: Bool) {
-        target.setRecords(with: ShuffleRunner())
-        isPlaying = true
-        startPlayTask()
-    }
+    lazy var sizeBarButtonItem: UIBarButtonItem = {
+        let sizeActions = sizes.map { size in
+            UIAction(title: "\(size) Items") { [unowned self] _ in
+                self.size = size
+                self.updateTargetWithNewSettings()
+            }
+        }
+        sizeActions.first?.state = .on
+        
+        return UIBarButtonItem(
+            image: UIImage(systemName: "chart.bar.fill"),
+            menu: UIMenu(title: "Size", options: .singleSelection, children: sizeActions)
+        )
+    }()
     
-    func createSpeedMenu() -> UIMenu {
+    lazy var speedBarButtonItem: UIBarButtonItem = {
         let slowSpeedAction = UIAction(title: "Slow") { _ in
             self.playbackSpeed = PlaybackSpeed.slow
         }
@@ -224,33 +229,44 @@ class SortViewController: UIViewController {
             self.playbackSpeed = PlaybackSpeed.fast
         }
         
-        return UIMenu(
-            title: "Speed",
-            options: .singleSelection,
-            children: [slowSpeedAction, normalSpeedAction, fastSpeedAction]
+        return UIBarButtonItem(
+            image: UIImage(systemName: "chevron.forward.2"),
+            menu: UIMenu(
+                title: "Speed",
+                options: .singleSelection,
+                children: [slowSpeedAction, normalSpeedAction, fastSpeedAction]
+            )
         )
+    }()
+
+    // MARK: - UI - methods
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        title = sortAlgorithm.name
+        
+        view.backgroundColor = .systemBackground
+        
+        configureSubviews()
+        
+        navigationItem.rightBarButtonItems = [
+            speedBarButtonItem,
+            sizeBarButtonItem,
+            orderBarButtonItem
+        ]
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateLayoutStackAxis),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+        updateLayoutStackAxis()
     }
     
-    func createSizeMenu() -> UIMenu {
-        let sizeActions = sizes.map { size in
-            UIAction(title: "\(size) Items") { [unowned self] _ in
-                self.size = size
-                self.updateTargetWithNewSettings()
-            }
-        }
-        sizeActions.first?.state = .on
-        return UIMenu(title: "Size", options: .singleSelection, children: sizeActions)
-    }
-    
-    func createOrderMenu() -> UIMenu {
-        let orderActions = orders.map { order in
-            UIAction(title: order.label) { [unowned self] _ in
-                self.order = order
-                self.updateTargetWithNewSettings()
-            }
-        }
-        orderActions.first?.state = .on
-        return UIMenu(title: "Order", options: .singleSelection, children: orderActions)
+    override func viewDidAppear(_ animated: Bool) {
+        playShuffle()
     }
     
     func configureSubviews() {
@@ -282,9 +298,13 @@ class SortViewController: UIViewController {
         }
     }
     
-    func updateNavButtons() {
+    func updateButtons() {
         nextButton.isEnabled = !isPlaying && target.nextAvailable
         previousButton.isEnabled = !isPlaying && target.previousAvailable
+        shuffleButton.isEnabled = !isPlaying
+        
+        orderBarButtonItem.isEnabled = !isPlaying
+        sizeBarButtonItem.isEnabled = !isPlaying
     }
 
 }
