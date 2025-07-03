@@ -1,10 +1,12 @@
 class RecordedList {
     
     private var items: [Int]
+    private var order: SortOrder
     private(set) var records = [SortRecord]()
     
-    init(items: [Int]) {
+    init(items: [Int], order: SortOrder) {
         self.items = items
+        self.order = order
     }
     
     var count: Int {
@@ -41,11 +43,11 @@ class RecordedList {
         return items[i]
     }
     
-    func compare(a: Int, b: Int) -> Int {
-        return (a - b).signum()
+    func compare(_ a: Int, _ b: Int) -> Int {
+        return order.compare(a, b)
     }
     
-    func compare(_ i: Int, _ j: Int) -> Int {
+    func compareElement(at i: Int, _ j: Int) -> Int {
         records.append(SortRecord(
             affected: [
                 unchangedElement(at: i),
@@ -54,11 +56,11 @@ class RecordedList {
             label: "Compare",
             color: .systemOrange
         ))
-        return compare(a: items[i], b: items[j])
+        return compare(items[i], items[j])
     }
     
-    func inOrder(_ i: Int, _ j: Int) -> Bool {
-        return compare(i, j) <= 0
+    func inOrder(at i: Int, _ j: Int) -> Bool {
+        return compareElement(at: i, j) <= 0
     }
     
 }

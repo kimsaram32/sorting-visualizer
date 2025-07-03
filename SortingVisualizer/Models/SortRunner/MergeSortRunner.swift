@@ -24,7 +24,7 @@ struct MergeSortRunner: SortRunner {
             } else if j > high {
                 list.setElement(at: k, value: aux[i - low])
                 i += 1
-            } else if list.compare(a: aux[i - low], b: aux[j - low]) <= 0 {
+            } else if list.compare(aux[i - low], aux[j - low]) <= 0 {
                 list.setElement(at: k, value: aux[i - low])
                 i += 1
             } else {

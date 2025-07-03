@@ -12,11 +12,11 @@ struct QuickSortRunner: SortRunner {
         while true {
             repeat {
                 i += 1
-            } while i < high && list.compare(i, low) < 0
+            } while i < high && list.compareElement(at: i, low) < 0
             
             repeat {
                 j -= 1
-            } while list.compare(j, low) > 0
+            } while list.compareElement(at: j, low) > 0
             
             if i >= j {
                 break

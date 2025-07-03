@@ -5,10 +5,12 @@ class SortTarget {
     var recordDiffHandler: RecordDiffHandler?
     
     private(set) var items: [Int]
+    private let order: SortOrder
     private var records = [SortRecord]()
     
-    init(size: Int) {
+    init(size: Int, order: SortOrder) {
         self.items = Array(0..<size)
+        self.order = order
     }
     
     private var currentRecordIndex = 0
@@ -22,7 +24,7 @@ class SortTarget {
     }
     
     func setRecords(with runner: SortRunner) {
-        let recordedList = RecordedList(items: items)
+        let recordedList = RecordedList(items: items, order: order)
         runner.run(with: recordedList)
         
         records = [.empty()]

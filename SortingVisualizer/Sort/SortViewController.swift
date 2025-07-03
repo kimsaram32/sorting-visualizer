@@ -8,7 +8,8 @@ class SortViewController: UIViewController {
         static let fast = Duration.milliseconds(50)
     }
     
-    let sizes = [10, 20, 50, 100]
+    private let sizes = [10, 20, 50, 100]
+    private let orders: [SortOrder] = [.ascending, .descending]
     
     let sortAlgorithm: SortAlgorithm
 
@@ -23,10 +24,10 @@ class SortViewController: UIViewController {
     
     // MARK: - state
     
-    lazy var target = createTarget(withSize: sizes.first!)
+    lazy var target = createTarget(withSize: size, order: order)
     
-    func createTarget(withSize size: Int) -> SortTarget {
-        let target = SortTarget(size: size)
+    func createTarget(withSize size: Int, order: SortOrder) -> SortTarget {
+        let target = SortTarget(size: size, order: order)
         
         target.recordDiffHandler = { diff in
             for index in diff.dehighlighted {
@@ -46,6 +47,20 @@ class SortViewController: UIViewController {
         target.setRecords(with: sortAlgorithm.runner)
         
         return target
+    }
+    
+    private var size = 10
+    private var order: SortOrder = .ascending
+    
+    func updateTargetWithNewSettings() {
+        target = createTarget(withSize: size, order: order)
+        itemsView.setItems(items: target.items)
+        
+        target.setRecords(with: ShuffleRunner())
+        if !isPlaying {
+            isPlaying = true
+            startPlayTask()
+        }
     }
     
     private var isPlaying = false {
@@ -173,7 +188,11 @@ class SortViewController: UIViewController {
             UIBarButtonItem(
                 image: UIImage(systemName: "chart.bar.fill"),
                 menu: createSizeMenu()
-            )
+            ),
+            UIBarButtonItem(
+                image: UIImage(systemName: "arrow.up.arrow.down"),
+                menu: createOrderMenu()
+            ),
         ]
         
         NotificationCenter.default.addObserver(
@@ -215,18 +234,23 @@ class SortViewController: UIViewController {
     func createSizeMenu() -> UIMenu {
         let sizeActions = sizes.map { size in
             UIAction(title: "\(size) Items") { [unowned self] _ in
-                target = createTarget(withSize: size)
-                itemsView.setItems(items: target.items)
-                
-                target.setRecords(with: ShuffleRunner())
-                if !isPlaying {
-                    isPlaying = true
-                    startPlayTask()
-                }
+                self.size = size
+                self.updateTargetWithNewSettings()
             }
         }
         sizeActions.first?.state = .on
         return UIMenu(title: "Size", options: .singleSelection, children: sizeActions)
+    }
+    
+    func createOrderMenu() -> UIMenu {
+        let orderActions = orders.map { order in
+            UIAction(title: order.label) { [unowned self] _ in
+                self.order = order
+                self.updateTargetWithNewSettings()
+            }
+        }
+        orderActions.first?.state = .on
+        return UIMenu(title: "Order", options: .singleSelection, children: orderActions)
     }
     
     func configureSubviews() {

@@ -7,7 +7,7 @@ struct BubbleSortRunner: SortRunner {
             var dirty = false
             
             for j in 0..<i - 1 {
-                if !list.inOrder(j, j + 1) {
+                if !list.inOrder(at: j, j + 1) {
                     dirty = true
                     list.swapAt(j, j + 1)
                 }
