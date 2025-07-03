@@ -4,6 +4,12 @@ class HomeViewController: UIViewController {
     
     typealias Cell = HomeCollectionViewCell
     
+    private var sortAlgorithms: [SortAlgorithm]?
+    
+    private lazy var loadingIndicator: UIActivityIndicatorView = .make {
+        $0.style = .large
+    }
+    
     private lazy var collectionView: UICollectionView = .make({
         $0.dataSource = self
         $0.delegate = self
@@ -12,16 +18,53 @@ class HomeViewController: UIViewController {
         UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
     }
     
+    private func errorLabel(message: String) -> UILabel {
+        .make {
+            $0.text = message
+            $0.font = .preferredFont(forTextStyle: .headline)
+            $0.textAlignment = .center
+        }
+    }
+    
     override func viewDidLoad() {
         title = "Sort Visualizer"
         view.backgroundColor = .systemBackground
         
+        navigationController?.navigationBar.prefersLargeTitles = true
+        
         configureSubviews()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        collectionView.isHidden = true
+        
+        do {
+            sortAlgorithms = try SortAlgorithmStore.shared.algorithms()
+            loadingIndicator.stopAnimating()
+            
+            collectionView.isHidden = false
+            collectionView.reloadData()
+        } catch {
+            loadingIndicator.stopAnimating()
+            showErrorMessage("Failed to load sort algorithms")
+        }
+    }
+    
     func configureSubviews() {
+        view.addSubview(loadingIndicator)
+        loadingIndicator.pin(to: view.safeAreaLayoutGuide)
+        
         view.addSubview(collectionView)
         collectionView.pin(to: view.safeAreaLayoutGuide)
+    }
+    
+    func showErrorMessage(_ message: String) {
+        let label = errorLabel(message: message)
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        ])
     }
     
 }
@@ -48,12 +91,12 @@ extension HomeViewController {
 extension HomeViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        SortAlgorithm.items.count
+        sortAlgorithms?.count ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.identifier, for: indexPath) as! Cell
-        let sortAlgorithm = SortAlgorithm.items[indexPath.row]
+        let sortAlgorithm = sortAlgorithms![indexPath.row]
         cell.title = sortAlgorithm.name
         cell.icon = sortAlgorithm.icon
         return cell
@@ -64,7 +107,7 @@ extension HomeViewController: UICollectionViewDataSource {
 extension HomeViewController: UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let sortAlgorithm = SortAlgorithm.items[indexPath.row]
+        let sortAlgorithm = sortAlgorithms![indexPath.row]
         let viewController = SortViewController(sortAlgorithm: sortAlgorithm)
         navigationController?.pushViewController(viewController, animated: true)
     }

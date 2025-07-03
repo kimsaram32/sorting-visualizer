@@ -3,18 +3,6 @@ import UIKit
 
 struct SortAlgorithm: Decodable {
     
-    static var items = [SortAlgorithm]()
-    
-    static func load() {
-        do {
-            let algorithmsResourcePath = Bundle.main.path(forResource: "algorithms", ofType: "json")!
-            let algorithmsData = FileManager.default.contents(atPath: algorithmsResourcePath)!
-            items = try JSONDecoder().decode([SortAlgorithm].self, from: algorithmsData)
-        } catch {
-            print(error)
-        }
-    }
-    
     let name: String
     let complexities: [Complexity]
     let runner: SortRunner
